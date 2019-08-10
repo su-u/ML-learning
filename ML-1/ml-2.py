@@ -2,10 +2,10 @@ import tensorflow as tf
 
 import matplotlib.pyplot as plt
 import numpy as np
-class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 mnist = tf.keras.datasets.mnist
 
-
+#%%
 def plot_image(i, predictions_array, true_label, img):
     predictions_array, true_label, img = predictions_array[i], true_label[i], img[i]
     plt.grid(False)
@@ -38,6 +38,17 @@ def plot_value_array(i, predictions_array, true_label):
     thisplot[predicted_label].set_color('red')
     thisplot[true_label].set_color('blue')
 
+
+def preprocess_image(image):
+    image = tf.image.decode_jpeg(image, channels=3)
+    image = tf.image.resize(image, [28, 28])
+    image /= 255.0  # normalize to [0,1] range
+
+    return image
+
+def load_and_preprocess_image(path):
+    image = tf.io.read_file(path)
+    return preprocess_image(image)
 #%%
 
 
@@ -54,12 +65,12 @@ for x in y_train:
 print(table)
 #%%
 print(x_train.shape)
-
+print(x_train[0])
 
 #%%
 model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(input_shape=(28, 28)),
-    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(256, activation='relu'),
     tf.keras.layers.Dropout(0.2),
     tf.keras.layers.Dense(10, activation='softmax')
 ])
@@ -73,13 +84,19 @@ model.fit(x_train, y_train, epochs=5)
 print(model.evaluate(x_test, y_test))
 
 #%%
-
+plt.figure()
+plt.imshow(x_train[0])
+plt.show()
 predictions = model.predict(x_test)
+
+plt.figure()
+plt.imshow(x_test[0])
+plt.show()
 print(predictions[0])
 
 #%%
 num_rows = 5
-num_cols = 3
+num_cols = 5
 num_images = num_rows * num_cols
 plt.figure(figsize=(2 * 2 * num_cols, 2 * num_rows))
 for i in range(num_images):
@@ -88,3 +105,26 @@ for i in range(num_images):
     plt.subplot(num_rows, 2 * num_cols, 2 * i + 2)
     plot_value_array(i, predictions, y_test)
 plt.show()
+
+#%%
+image_r = tf.io.read_file('2-2.jpg')
+image = tf.image.decode_image(image_r, 1)
+image_j = tf.image.decode_jpeg(image_r, 1)
+
+image_f = load_and_preprocess_image('2-2.jpg')
+image_f = tf.image.rgb_to_grayscale(image_f)
+image_f = tf.squeeze(tf.cast(255.0 - (image_f * 255.0), tf.uint8))
+
+plt.figure()
+plt.imshow(image_f)
+plt.show()
+
+
+
+
+img = (np.expand_dims(image_f, 0))
+predictions_s = model.predict(img)
+print(predictions_s)
+predicted_label = np.argmax(predictions_s)
+print(predicted_label)
+
